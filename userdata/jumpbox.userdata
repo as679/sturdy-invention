@@ -1,0 +1,164 @@
+#cloud-config
+users:
+  - default
+
+packages:
+  - epel-release
+  - ansible
+  - git
+
+write_files:
+  - content: |
+      #!/bin/sh
+      hostnamectl set-hostname --static ${hostname}
+      echo 'preserve_hostname: true' >> /etc/cloud/cloud.cfg
+      mv /opt/id /home/centos/.ssh/id_rsa
+      chown centos.centos /home/centos/.ssh/id_rsa
+      echo "[servers]" >> /etc/ansible/hosts
+      for i in {1..${server_count}}; do
+        echo "${base_ip}$i  server$i.lab" >> /etc/hosts
+        echo "server$i" >> /etc/ansible/hosts
+      done
+      echo "${ctrl_ip}" >> /tmp/controllers
+      echo "${ctrl_ip_public}" >> /tmp/controllers_public
+      yum install tinyproxy -y
+      sed -i 's/^#\(host_key_checking = False\)/\1/' /etc/ansible/ansible.cfg
+      sed -i 's/^\(Allow 127.0.0.1\)$/#\1/' /etc/tinyproxy/tinyproxy.conf
+      systemctl enable tinyproxy
+      systemctl start tinyproxy
+      echo "[controllers]" > /etc/ansible/hosts
+      idx=1; for ip in `cat /tmp/controllers | tr ':' '\n'`; do
+        echo "$ip ctrl$idx.lab" >> /etc/hosts
+        echo "ctrl$idx ansible_user=admin" >> /etc/ansible/hosts
+        ((idx++))
+      done
+      idx=1; for ip in `cat /tmp/controllers_public | tr ':' '\n'`; do
+        echo "$ip ctrl$idx.public.lab" >> /etc/hosts
+        ((idx++))
+      done
+      ((idx--))
+      /root/update_yml_template /root/cloud $idx
+      yum install -y python-pip
+      pip install avisdk
+      ansible-galaxy install avinetworks.avisdk
+      ansible-galaxy install avinetworks.aviconfig
+      #for i in $(seq $idx); do /root/update_avi_admin.py ctrl$i; done
+      #ansible-playbook /root/cloud.yml
+      yum install dnsmasq -y
+      echo 'local=/lab/' >> /etc/dnsmasq.conf
+      systemctl enable dnsmasq
+      systemctl start dnsmasq
+      touch /tmp/cloud-init.done
+    path: /opt/bootstrap.sh
+    permissions: 0755
+  - content: |
+      ${pkey}
+    path: /opt/id
+    permissions: 0600
+  - content: |
+      #!/usr/bin/python
+      import requests
+      import sys
+      import socket
+      from time import sleep
+      ip = socket.gethostbyname(sys.argv[1])
+      new_pass = sys.argv[2]
+      session = requests.Session()
+      portal_up = False
+      while not portal_up:
+        print 'SLEEPING...'
+        sleep(1)
+        try:
+          session.get("http://%s/" % ip)
+        except requests.exceptions.SSLError:
+          portal_up = True
+          print "PORTAL_UP"
+          pass
+        except:
+          pass
+      login_status = session.post("https://%s/login" % ip, verify=False, data={'username': 'admin', 'password': '58NFaGDJm(PJH0G'}).status_code
+      print 'STATUS_CODE: %d' % login_status
+      while login_status != 200:
+        print 'SLEEPING...'
+        sleep(1)
+        login_status = session.post("https://%s/login" % ip, verify=False, data={'username': 'admin', 'password': '58NFaGDJm(PJH0G'}).status_code
+        print 'STATUS_CODE: %d' % login_status
+      session.headers.update({'Referer': "https://%s/" % ip})
+      session.headers.update({'X-CSRFToken': session.cookies['csrftoken']})
+      session.put("https://%s/api/useraccount" % ip, verify=False, json={'username': 'admin', 'password': new_pass, 'old_password': '58NFaGDJm(PJH0G'})
+    path: /root/update_avi_admin.py
+    permissions: 0700
+  - content: |
+      - hosts: localhost
+        connection: local
+        vars:
+          api_version: 17.2.7
+        roles:
+          - role: avinetworks.avisdk
+        tasks:
+          - name: Avi Cloud
+            include_role:
+              name: avinetworks.aviconfig
+            vars:
+              avi_controller: "{{ ctrl_hostname }}"
+              avi_username: admin
+              avi_password: SETME
+              avi_config:
+                cloud:
+                  - api_version: 17.2.7
+                    name: aws
+                    vtype: CLOUD_AWS
+                    dhcp_enabled: true
+                    license_type: "LIC_CORES"
+                    aws_configuration:
+                      region: ${region}
+                      vpc_id: ${vpc_id}
+                      use_iam_roles: True
+                      zones:
+                        - availability_zone: ${az}
+                          mgmt_network_name: ${mgmt_net}
+            with_items:
+            loop_control:
+              loop_var: ctrl_hostname
+    path: /root/cloud.template
+    permissions: 0600
+  - content: |
+      #!/usr/bin/python
+      import yaml
+      import sys
+      with open("%s.template" % sys.argv[1]) as fh:
+              y = yaml.load(fh)
+      items = []
+      y[0]['tasks'][0]['with_items'] = items
+      for i in range(1, int(sys.argv[2]) + 1):
+              items.append("ctrl%s" % i)
+      with open("%s.yml" % sys.argv[1], 'w') as fh:
+              yaml.dump(y, fh)
+    path: /root/update_yml_template
+    permissions: 0700
+  - content: |
+      #!/usr/bin/python
+      import sys
+      from avi.sdk.avi_api import ApiSession
+      ctrl = sys.argv[1]
+      passwd = sys.argv[2]
+      no_access = { 'vtype': 'CLOUD_NONE' }
+      api = ApiSession.get_session(ctrl, "admin", passwd, tenant="admin")
+      for i in api.get('virtualservice').json()['results']:
+          print "Deleting VS: %s" % i['name']
+          api.delete_by_name('virtualservice', i['name'])
+      for i in api.get('serviceengine').json()['results']:
+          print "Deleting SE: %s" % i['name']
+          api.delete_by_name('serviceengine', i['name'])
+      for i in api.get('cloud').json()['results']:
+          print "Forcing garbage collection on cloud: %s" % i['name']
+          no_access['name'] = i['name']
+          for j in range(5):
+              api.put('cloud/%s/gc' % i['uuid'], params={'force': True})
+          print "Setting NO_ACCESS on cloud: %s" % i['name']
+          api.put('cloud/%s' % i['uuid'], data=no_access)
+    path: /root/clean_me
+    permissions: 0700
+
+runcmd:
+  - /opt/bootstrap.sh

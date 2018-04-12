@@ -1,0 +1,79 @@
+#cloud-config
+users:
+  - default
+
+write_files:
+  - content: |
+      #!/bin/sh
+      hostnamectl set-hostname --static ${hostname}
+      echo 'preserve_hostname: true' >> /etc/cloud/cloud.cfg
+      echo "proxy=http://${jump_ip}:8888" >> /etc/yum.conf
+      /usr/local/bin/block_on_proxy http://${jump_ip}:8888
+      yum install epel-release -y
+      yum install ansible -y
+      yum install git -y
+      #ansible-playbook /opt/juice.yml
+      https_proxy="http://${jump_ip}:8888" ansible-pull -U https://github.com/as679/fluffy-octo-palm-tree.git -C bootstrap webserver.yml
+      sed -i "s/\(We are in stealth.*$\)/\1<p>This is <b>SERVER${number}<\/b><\/p>/" /usr/share/nginx/avinetworks/index.html
+      touch /tmp/cloud-init.done
+    path: /opt/bootstrap.sh
+    permissions: 0755
+  - content: |
+      ---
+      - hosts: localhost
+        become: yes
+        tasks:
+        - yum:
+            name: "{{ item }}"
+            state: present
+          with_items:
+          - docker
+          - docker-python
+        - lineinfile:
+            dest: /etc/sysconfig/docker
+            regexp: ''
+            insertafter: EOF
+            line: HTTP_PROXY="http://${jump_ip}:8888"
+        - systemd:
+            name: docker
+            enabled: yes
+            state: restarted
+        - docker_image:
+            name: "{{ item }}"
+            state: present
+          with_items:
+          - bkimminich/juice-shop
+          - citizenstig/dvwa
+        - docker_container:
+            name: loose
+            image: bkimminich/juice-shop
+            ports:
+            - 8080:3000
+            detach: true
+            state: started
+        - docker_container:
+            name: moose
+            image: citizenstig/dvwa
+            ports:
+            - 8081:80
+            detach: true
+            state: started
+            env:
+              MYSQL_PASS: "Chang3ME!"
+    path: /opt/juice.yml
+    permissions: 0775
+  - content: |
+      #!/bin/bash
+      PROXY=$1
+      curl --proxy "$PROXY" www.google.com > /dev/null
+      status=$?
+      while [ $status != 0 ]; do
+        sleep 10
+        curl --proxy "$PROXY" www.google.com > /dev/null
+        status=$?
+      done
+    path: /usr/local/bin/block_on_proxy
+    permissions: 0775
+
+runcmd:
+  - /opt/bootstrap.sh
