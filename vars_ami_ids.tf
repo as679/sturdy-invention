@@ -8,17 +8,32 @@ variable "ami_avi_controller" {
 
   default = {
     us-west-2 = "ami-044157c009c8b2c19"
-    eu-west-2 = "ami-02c40da7ac2a43b21"
+    #eu-west-2 = "ami-02c40da7ac2a43b21" #17.2.8
+    #eu-west-2 = "ami-09208f52b4a7fab78" #17.2.10
+    eu-west-2 = "ami-054cff7d4cce9453d" #17.2.9
   }
 }
 
 # aws ec2 describe-images --owners aws-marketplace --filters Name=product-code,Values=aw0evgkw8e5c1q413zgy5pjce --region eu-west-2 | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
+# NOTE
+# Prebuilt packer image is used in labs
 variable "ami_centos" {
   type        = "map"
-  description = "CentOS AMI by region updated 11/04/18"
+  description = "CentOS AMI by region updated 05/06/18"
 
   default = {
-    us-west-2 = "ami-0ebdd976"
-    eu-west-2 = "ami-4f02e328"
+    eu-west-2 = "ami-0413a09be9a201e85" #latest Packer build
+  }
+}
+
+# aws ec2 describe-images --owners 679593333241 --filters Name=name,Values='Kali Linux*' --region eu-west-2 | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
+# NOTE
+# Prebuilt packer image is used in labs
+variable "ami_kali" {
+  type        = "map"
+  description = "Kali Linux AMI by region updated 05/06/18"
+
+  default = {
+    eu-west-2 = "ami-03ad7d349f874e433" #latest Packer build
   }
 }

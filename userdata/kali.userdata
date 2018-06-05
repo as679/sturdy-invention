@@ -1,0 +1,28 @@
+#cloud-config
+users:
+  - default
+
+write_files:
+  - content: |
+      #!/bin/sh
+      sed -i 's/^\(127.0.0.1 localhost\)$/\1 ${hostname}/' /etc/hosts
+      hostname ${hostname}
+      echo ${hostname} > /etc/hostname
+      echo 'preserve_hostname: true' >> /etc/cloud/cloud.cfg
+      mkdir /home/ec2-user/.vnc
+      chown ec2-user:ec2-user /home/ec2-user/.vnc
+      chmod 700 /home/ec2-user/.vnc
+      mv /tmp/passwd /home/ec2-user/.vnc/passwd
+      su -l -c 'vncserver :1' ec2-user
+      register.py ${jump_ip}
+      touch /tmp/cloud-init.done
+    path: /opt/bootstrap.sh
+    permissions: 0755
+  - encoding: b64
+    content: +svPUMO/HAg=
+    path: /tmp/passwd
+    owner: ec2-user:ec2-user
+    permissions: 0600
+
+runcmd:
+  - /opt/bootstrap.sh

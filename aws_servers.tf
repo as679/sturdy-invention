@@ -6,7 +6,7 @@ data "template_file" "server_userdata" {
   template = "${file("${path.module}/userdata/server.userdata")}"
 
   vars {
-    hostname = "${var.id}_server_student${count.index + 1}"
+    hostname = "${var.id}_student${count.index + 1}_server"
     jump_ip  = "${aws_instance.jump.private_ip}"
     number   = "${count.index + 1}"
   }
@@ -23,7 +23,7 @@ resource "aws_instance" "server" {
   private_ip             = "${format("%s%02d", var.base_ip, count.index + 1)}"
   source_dest_check      = false
   user_data              = "${data.template_file.server_userdata.*.rendered[count.index]}"
-  depends_on             = ["aws_internet_gateway.igw"]
+  depends_on             = ["aws_instance.jump"]
 
   tags {
     Name  = "${var.id}_student${count.index + 1}_server"

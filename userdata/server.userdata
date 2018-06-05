@@ -7,14 +7,12 @@ write_files:
       #!/bin/sh
       hostnamectl set-hostname --static ${hostname}
       echo 'preserve_hostname: true' >> /etc/cloud/cloud.cfg
-      echo "proxy=http://${jump_ip}:8888" >> /etc/yum.conf
-      /usr/local/bin/block_on_proxy http://${jump_ip}:8888
-      yum install epel-release -y
-      yum install ansible -y
-      yum install git -y
-      #ansible-playbook /opt/juice.yml
-      https_proxy="http://${jump_ip}:8888" ansible-pull -U https://github.com/as679/fluffy-octo-palm-tree.git -C bootstrap webserver.yml
-      sed -i "s/\(We are in stealth.*$\)/\1<p>This is <b>SERVER${number}<\/b><\/p>/" /usr/share/nginx/avinetworks/index.html
+      echo "proxy=http://${jump_ip}:3128" >> /etc/yum.conf
+      #/usr/local/bin/proxy_blocker.sh ${jump_ip}:8888
+      ansible-playbook /opt/juice.yml
+      #https_proxy="http://${jump_ip}:8888" ansible-pull -U https://github.com/as679/fluffy-octo-palm-tree.git -C bootstrap webserver.yml
+      #sed -i "s/\(We are in stealth.*$\)/\1<p>This is <b>SERVER${number}<\/b><\/p>/" /usr/share/nginx/avinetworks/index.html
+      register.py ${jump_ip}
       touch /tmp/cloud-init.done
     path: /opt/bootstrap.sh
     permissions: 0755
@@ -33,7 +31,7 @@ write_files:
             dest: /etc/sysconfig/docker
             regexp: ''
             insertafter: EOF
-            line: HTTP_PROXY="http://${jump_ip}:8888"
+            line: HTTP_PROXY="http://${jump_ip}:3128"
         - systemd:
             name: docker
             enabled: yes

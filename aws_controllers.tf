@@ -1,6 +1,17 @@
 # Terraform definition for the lab Controllers
 #
 
+data "template_file" "controller_userdata" {
+  count    = "${var.student_count}"
+  template = "${file("${path.module}/userdata/controller.userdata")}"
+
+  vars {
+    hostname = "${var.id}-student${count.index + 1}-controller"
+    jump_ip  = "${aws_instance.jump.private_ip}"
+    number   = "${count.index + 1}"
+  }
+}
+
 resource "aws_instance" "ctrl" {
   count                       = "${var.student_count}"
   ami                         = "${lookup(var.ami_avi_controller, var.aws_region)}"
@@ -12,10 +23,11 @@ resource "aws_instance" "ctrl" {
   associate_public_ip_address = true
   iam_instance_profile        = "AviController-Refined-Role"
   source_dest_check           = false
-  depends_on = ["aws_internet_gateway.igw"]
+  user_data              = "${data.template_file.controller_userdata.*.rendered[count.index]}"
+  depends_on                  = ["aws_instance.jump"]
 
   tags {
-    Name  = "${var.id}_student${count.index + 1}_ctrl"
+    Name  = "${var.id}-student${count.index + 1}-controller"
     Owner = "${var.owner}"
   }
 
@@ -24,20 +36,4 @@ resource "aws_instance" "ctrl" {
     volume_size           = "${var.vol_size_avi}"
     delete_on_termination = "true"
   }
-}
-
-output "JumpHost_PublicIP" {
-  value = "${aws_instance.jump.public_ip}"
-}
-
-output "JumpHost_PrivateIP" {
-  value = "${aws_instance.jump.private_ip}"
-}
-
-output "Controller_PublicIP" {
-  value = "${aws_instance.ctrl.*.public_ip}"
-}
-
-output "Controller_PrivateIP" {
-  value = "${aws_instance.ctrl.*.private_ip}"
 }

@@ -2,59 +2,14 @@
 users:
   - default
 
-packages:
-  - epel-release
-  - ansible
-  - git
-
 write_files:
   - content: |
       #!/bin/sh
       hostnamectl set-hostname --static ${hostname}
       echo 'preserve_hostname: true' >> /etc/cloud/cloud.cfg
-      mv /opt/id /home/centos/.ssh/id_rsa
-      chown centos.centos /home/centos/.ssh/id_rsa
-      echo "[servers]" >> /etc/ansible/hosts
-      for i in {1..${server_count}}; do
-        echo "${base_ip}$i  server$i.lab" >> /etc/hosts
-        echo "server$i" >> /etc/ansible/hosts
-      done
-      echo "${ctrl_ip}" >> /tmp/controllers
-      echo "${ctrl_ip_public}" >> /tmp/controllers_public
-      yum install tinyproxy -y
-      sed -i 's/^#\(host_key_checking = False\)/\1/' /etc/ansible/ansible.cfg
-      sed -i 's/^\(Allow 127.0.0.1\)$/#\1/' /etc/tinyproxy/tinyproxy.conf
-      systemctl enable tinyproxy
-      systemctl start tinyproxy
-      echo "[controllers]" > /etc/ansible/hosts
-      idx=1; for ip in `cat /tmp/controllers | tr ':' '\n'`; do
-        echo "$ip ctrl$idx.lab" >> /etc/hosts
-        echo "ctrl$idx ansible_user=admin" >> /etc/ansible/hosts
-        ((idx++))
-      done
-      idx=1; for ip in `cat /tmp/controllers_public | tr ':' '\n'`; do
-        echo "$ip ctrl$idx.public.lab" >> /etc/hosts
-        ((idx++))
-      done
-      ((idx--))
-      /root/update_yml_template /root/cloud $idx
-      yum install -y python-pip
-      pip install avisdk
-      ansible-galaxy install avinetworks.avisdk
-      ansible-galaxy install avinetworks.aviconfig
-      #for i in $(seq $idx); do /root/update_avi_admin.py ctrl$i; done
-      #ansible-playbook /root/cloud.yml
-      yum install dnsmasq -y
-      echo 'local=/lab/' >> /etc/dnsmasq.conf
-      systemctl enable dnsmasq
-      systemctl start dnsmasq
       touch /tmp/cloud-init.done
     path: /opt/bootstrap.sh
     permissions: 0755
-  - content: |
-      ${pkey}
-    path: /opt/id
-    permissions: 0600
   - content: |
       #!/usr/bin/python
       import requests
