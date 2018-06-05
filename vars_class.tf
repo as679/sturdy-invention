@@ -7,7 +7,7 @@
 variable "aws_access_key" {}
 variable "aws_secret_key" {}
 variable "aws_region" {}
-
+variable "pkey" {}
 ## End
 
 variable "student_count" {
@@ -33,4 +33,9 @@ variable "aws_az" {
     us-west-2 = "us-west-2a"
     eu-west-2 = "eu-west-2a"
   }
+}
+
+variable "key" {
+  description = "AWS SSH keypair name"
+  default     = "training-access"
 }
