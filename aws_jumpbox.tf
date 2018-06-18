@@ -58,6 +58,11 @@ resource "aws_instance" "jump" {
     destination = "/etc/systemd/system/handle_register.service"
   }
 
+  provisioner "file" {
+    source = "provisioning/backup_user.py"
+    destination = "/usr/local/bin/backup_user.py"
+  }
+
   provisioner "remote-exec" {
     scripts = [
       "provisioning/provision_jumpbox.sh"
