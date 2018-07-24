@@ -8,11 +8,13 @@ variable "aws_access_key" {}
 variable "aws_secret_key" {}
 variable "aws_region" {}
 variable "pkey" {}
-## End
+variable "avi_default_password" {}
+variable "avi_backup_admin_username" {}
+variable "avi_backup_admin_password" {}
 
 variable "student_count" {
   description = "The class size. Each student gets a controller / server pairing"
-  default     = 2
+  default     = 1
 }
 
 variable "id" {

@@ -28,6 +28,8 @@ resource "aws_instance" "server" {
   tags {
     Name  = "${var.id}_student${count.index + 1}_server"
     Owner = "${var.owner}"
+    Lab_Group = "servers"
+    Lab_Name = "student${count.index + 1}.server"
   }
 
   root_block_device {

@@ -1,0 +1,12 @@
+---
+- hosts: controllers
+  roles:
+  - controllers
+
+- hosts: servers
+  roles:
+  - servers
+
+- hosts: kalis
+  roles:
+  - kalis

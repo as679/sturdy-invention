@@ -27,8 +27,10 @@ resource "aws_instance" "ctrl" {
   depends_on                  = ["aws_instance.jump"]
 
   tags {
-    Name  = "${var.id}-student${count.index + 1}-controller"
+    Name  = "${var.id}_student${count.index + 1}_controller"
     Owner = "${var.owner}"
+    Lab_Group = "controllers"
+    Lab_Name = "student${count.index + 1}.controller"
   }
 
   root_block_device {

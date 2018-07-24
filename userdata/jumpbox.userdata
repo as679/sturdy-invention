@@ -7,6 +7,7 @@ write_files:
       #!/bin/sh
       hostnamectl set-hostname --static ${hostname}
       echo 'preserve_hostname: true' >> /etc/cloud/cloud.cfg
+      sudo pip install boto3
       touch /tmp/cloud-init.done
     path: /opt/bootstrap.sh
     permissions: 0755
@@ -44,6 +45,16 @@ write_files:
     path: /root/update_avi_admin.py
     permissions: 0700
   - content: |
+      #!/usr/bin/env python
+      import redis
+      import json
+      data = {'controllers': {}, '_meta': {'hostvars': {}}}
+      r = redis.StrictRedis(host='localhost', port=6379, db=0)
+      data['controllers']['hosts'] = r.sscan('controllers')[1]
+      print json.dumps(data)
+      path: /etc/ansible/hosts
+      permissions: 0755
+  - content: |
       - hosts: localhost
         connection: local
         vars:
@@ -72,10 +83,10 @@ write_files:
                       zones:
                         - availability_zone: ${az}
                           mgmt_network_name: ${mgmt_net}
-            with_items:
+            with_items: "{{ groups['controllers'] }}"
             loop_control:
               loop_var: ctrl_hostname
-    path: /root/cloud.template
+    path: /root/clouds.yml
     permissions: 0600
   - content: |
       #!/usr/bin/python
@@ -98,7 +109,7 @@ write_files:
       import threading
       from avi.sdk.avi_api import ApiSession
       r = redis.StrictRedis(host='localhost', port=6379, db=0)
-      def clean_up(ctrl,passwd='Passw0rd'):
+      def clean_up(ctrl, passwd):
           print "Cleaning Controller IP: %s" % ctrl
           no_access = { 'vtype': 'CLOUD_NONE' }
           api = ApiSession.get_session(ctrl, "admin", passwd, tenant="admin", timeout=600)
@@ -118,7 +129,7 @@ write_files:
       threads = []
       ctrls = r.sscan('controllers')[1]
       for ctrl in ctrls:
-          t = threading.Thread(target=clean_up, args=(ctrl,))
+          t = threading.Thread(target=clean_up, args=(ctrl, sys.argv[1]))
           threads.append(t)
           t.start()
     path: /root/clean_me

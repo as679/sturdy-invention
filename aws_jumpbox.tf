@@ -7,8 +7,6 @@ data "template_file" "jumpbox_userdata" {
   vars {
     hostname       = "${var.id}_jump"
     base_ip        = "${var.base_ip}"
-    #ctrl_ip        = "${join(":", aws_instance.ctrl.*.private_ip)}"
-    #ctrl_ip_public = "${join(":", aws_instance.ctrl.*.public_ip)}"
     server_count   = "${var.student_count}"
 
     vpc_id   = "${aws_vpc.waf_vpc.id}"
@@ -27,6 +25,7 @@ resource "aws_instance" "jump" {
   vpc_security_group_ids      = ["${element(aws_security_group.jumpsg.*.id, count.index)}"]
   subnet_id                   = "${aws_subnet.pubnet.id}"
   associate_public_ip_address = true
+  iam_instance_profile        = "${aws_iam_instance_profile.lab_profile.name}"
   source_dest_check           = false
   user_data                   = "${data.template_file.jumpbox_userdata.rendered}"
   depends_on                  = ["aws_internet_gateway.igw"]
@@ -34,6 +33,11 @@ resource "aws_instance" "jump" {
   tags {
     Name  = "${var.id}_jumpbox"
     Owner = "${var.owner}"
+    Lab_Group = "jumpbox"
+    Lab_Name = "student.jumpbox"
+    Lab_avi_default_password = "${var.avi_default_password}"
+    Lab_avi_backup_admin_username = "${var.avi_backup_admin_username}"
+    Lab_avi_backup_admin_password = "${var.avi_backup_admin_password}"
   }
 
   root_block_device {
@@ -49,6 +53,21 @@ resource "aws_instance" "jump" {
   }
 
   provisioner "file" {
+    source = "provisioning/bootstrap"
+    destination = "/opt/bootstrap"
+  }
+
+  provisioner "file" {
+    source = "provisioning/handle_bootstrap.py"
+    destination = "/usr/local/bin/handle_bootstrap.py"
+  }
+
+  provisioner "file" {
+    source = "provisioning/handle_bootstrap.service"
+    destination = "/etc/systemd/system/handle_bootstrap.service"
+  }
+
+  provisioner "file" {
     source = "provisioning/handle_register.py"
     destination = "/usr/local/bin/handle_register.py"
   }
@@ -59,8 +78,13 @@ resource "aws_instance" "jump" {
   }
 
   provisioner "file" {
-    source = "provisioning/backup_user.py"
-    destination = "/usr/local/bin/backup_user.py"
+    source = "provisioning/create_backup_user.yml"
+    destination = "/root/create_backup_user.yml"
+  }
+
+  provisioner "file" {
+    source = "provisioning/ansible_inventory.py"
+    destination = "/etc/ansible/hosts"
   }
 
   provisioner "remote-exec" {
@@ -90,6 +114,7 @@ resource "aws_instance" "kali" {
   vpc_security_group_ids = ["${aws_security_group.jumpsg.id}"]
   subnet_id              = "${aws_subnet.pubnet.id}"
   associate_public_ip_address = true
+  iam_instance_profile        = "${aws_iam_instance_profile.lab_profile.name}"
   source_dest_check      = false
   user_data              = "${data.template_file.kali_userdata.*.rendered[count.index]}"
   depends_on             = ["aws_instance.jump"]
@@ -97,6 +122,8 @@ resource "aws_instance" "kali" {
   tags {
     Name  = "${var.id}_student${count.index + 1}_kali"
     Owner = "${var.owner}"
+    Lab_Group = "kalis"
+    Lab_Name = "student${count.index + 1}.kali"
   }
 
   root_block_device {

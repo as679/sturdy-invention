@@ -1,14 +1,23 @@
 #!/bin/bash -e
 
 systemctl daemon-reload
-systemctl enable squid
-systemctl start squid
 systemctl enable redis
 systemctl start redis
-chmod +x /usr/local/bin/handle_register.py
-chmod +x /usr/local/bin/backup_user.py
-systemctl enable handle_register
-systemctl start handle_register
-cp /usr/local/bin/register.py /usr/share/nginx/html/
+systemctl enable squid
+systemctl start squid
 systemctl enable nginx
 systemctl start nginx
+git clone git://github.com/ansible/ansible-runner /tmp/ansible-runner
+pip install /tmp/ansible-runner/
+chmod +x /usr/local/bin/handle_bootstrap.py
+chmod +x /usr/local/bin/handle_register.py
+systemctl enable handle_bootstrap
+systemctl enable handle_register
+systemctl start handle_bootstrap
+systemctl start handle_register
+chmod +x /etc/ansible/hosts
+cp /usr/local/bin/register.py /usr/share/nginx/html/
+cp /etc/ansible/hosts /opt/bootstrap/inventory
+#Nasty, nasty, very very nasty...
+sleep 5
+/usr/local/bin/register.py localhost
