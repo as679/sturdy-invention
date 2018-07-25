@@ -31,6 +31,7 @@ resource "aws_instance" "ctrl" {
     Owner = "${var.owner}"
     Lab_Group = "controllers"
     Lab_Name = "student${count.index + 1}.controller"
+    ansible_connection = "local"
   }
 
   root_block_device {
