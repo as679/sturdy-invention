@@ -11,6 +11,7 @@ git clone git://github.com/ansible/ansible-runner /tmp/ansible-runner
 pip install /tmp/ansible-runner/
 chmod +x /usr/local/bin/handle_bootstrap.py
 chmod +x /usr/local/bin/handle_register.py
+chmod +x /usr/local/bin/cleanup_controllers.py
 systemctl enable handle_bootstrap
 systemctl enable handle_register
 systemctl start handle_bootstrap

@@ -91,6 +91,11 @@ resource "aws_instance" "jump" {
     destination = "/etc/ansible/hosts"
   }
 
+  provisioner "file" {
+    source = "provisioning/cleanup_controllers.py"
+    destination = "/usr/local/bin/cleanup_controllers.py"
+  }
+
   provisioner "remote-exec" {
     scripts = [
       "provisioning/provision_jumpbox.sh"

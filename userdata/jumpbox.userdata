@@ -58,40 +58,6 @@ write_files:
               yaml.dump(y, fh)
     path: /root/update_yml_template
     permissions: 0700
-  - content: |
-      #!/usr/bin/python
-      import sys
-      import redis
-      import threading
-      import urllib3
-      urllib3.disable_warnings()
-      from avi.sdk.avi_api import ApiSession
-      r = redis.StrictRedis(host='localhost', port=6379, db=0)
-      def clean_up(ctrl, passwd):
-          print "Cleaning Controller IP: %s" % ctrl
-          no_access = { 'vtype': 'CLOUD_NONE' }
-          api = ApiSession.get_session(ctrl, "admin", passwd, tenant="admin", timeout=600)
-          for i in api.get('virtualservice').json()['results']:
-              print "Deleting VS: %s" % i['name']
-              api.delete_by_name('virtualservice', i['name'])
-          for i in api.get('serviceengine').json()['results']:
-              print "Deleting SE: %s" % i['name']
-              api.delete_by_name('serviceengine', i['name'])
-          for i in api.get('cloud').json()['results']:
-              print "Forcing garbage collection on cloud: %s" % i['name']
-              no_access['name'] = i['name']
-              for j in range(5):
-                  api.put('cloud/%s/gc' % i['uuid'], params={'force': True})
-              print "Setting NO_ACCESS on cloud: %s" % i['name']
-              api.put('cloud/%s' % i['uuid'], data=no_access)
-      threads = []
-      ctrls = r.sscan('controllers')[1]
-      for ctrl in ctrls:
-          t = threading.Thread(target=clean_up, args=(ctrl, sys.argv[1]))
-          threads.append(t)
-          t.start()
-    path: /root/clean_me
-    permissions: 0700
 
 runcmd:
   - /opt/bootstrap.sh
