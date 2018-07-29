@@ -29,7 +29,7 @@ resource "aws_instance" "server" {
     Name  = "${var.id}_student${count.index + 1}_server"
     Owner = "${var.owner}"
     Lab_Group = "servers"
-    Lab_Name = "student${count.index + 1}.server"
+    Lab_Name = "server.student${count.index + 1}.lab"
   }
 
   root_block_device {

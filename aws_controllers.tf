@@ -24,13 +24,13 @@ resource "aws_instance" "ctrl" {
   iam_instance_profile        = "AviController-Refined-Role"
   source_dest_check           = false
   user_data              = "${data.template_file.controller_userdata.*.rendered[count.index]}"
-  depends_on                  = ["aws_instance.jump"]
+  depends_on                  = ["aws_instance.server"]
 
   tags {
     Name  = "${var.id}_student${count.index + 1}_controller"
     Owner = "${var.owner}"
     Lab_Group = "controllers"
-    Lab_Name = "student${count.index + 1}.controller"
+    Lab_Name = "controller.student${count.index + 1}.lab"
     ansible_connection = "local"
   }
 

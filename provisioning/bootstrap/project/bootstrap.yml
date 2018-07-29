@@ -1,12 +1,11 @@
 ---
 - hosts: controllers
   vars:
-    ctl_username: admin
-    ctl_password: "{{ hostvars['student.jumpbox']['Lab_avi_default_password'] }}"
-    ctl_ip: "{{ hostvars[inventory_hostname]['privateIp'] }}"
-    avi_users:
-      - username: "{{ hostvars['student.jumpbox']['Lab_avi_backup_admin_username'] }}"
-        password: "{{ hostvars['student.jumpbox']['Lab_avi_backup_admin_password'] }}"
+    avi_credentials:
+      controller: "{{ inventory_hostname }}"
+      username: admin
+      password: "{{ hostvars['jumpbox.student.lab']['Lab_avi_default_password'] }}"
+
   roles:
     - avinetworks.avisdk
     - controllers
@@ -18,3 +17,7 @@
 - hosts: kalis
   roles:
   - kalis
+
+- hosts: jumpbox
+  roles:
+  - jumpbox

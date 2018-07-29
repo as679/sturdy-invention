@@ -34,10 +34,14 @@ resource "aws_instance" "jump" {
     Name  = "${var.id}_jumpbox"
     Owner = "${var.owner}"
     Lab_Group = "jumpbox"
-    Lab_Name = "student.jumpbox"
+    Lab_Name = "jumpbox.student.lab"
+    Lab_vpc_id = "${aws_vpc.waf_vpc.id}"
     Lab_avi_default_password = "${var.avi_default_password}"
+    Lab_avi_admin_password = "${var.avi_admin_password}"
     Lab_avi_backup_admin_username = "${var.avi_backup_admin_username}"
     Lab_avi_backup_admin_password = "${var.avi_backup_admin_password}"
+    Lab_avi_management_network = "${var.id}_management_network"
+    Lab_avi_vip_network = "${var.id}_VIP_network"
   }
 
   root_block_device {
@@ -123,7 +127,7 @@ resource "aws_instance" "kali" {
     Name  = "${var.id}_student${count.index + 1}_kali"
     Owner = "${var.owner}"
     Lab_Group = "kalis"
-    Lab_Name = "student${count.index + 1}.kali"
+    Lab_Name = "kali.student${count.index + 1}.lab"
   }
 
   root_block_device {

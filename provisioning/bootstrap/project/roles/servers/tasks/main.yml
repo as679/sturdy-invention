@@ -3,7 +3,7 @@
     dest: /etc/yum.conf
     regexp: ''
     insertafter: EOF
-    line: proxy=http://{{ hostvars['student.jumpbox']['privateIp'] }}:3128
+    line: proxy=http://{{ hostvars['jumpbox.student.lab']['privateIp'] }}:3128
 - yum:
     name: "{{ item }}"
     state: present
@@ -11,14 +11,14 @@
   - docker
 - pip:
     name: "{{ item }}"
-    extra_args: --proxy {{ hostvars['student.jumpbox']['privateIp'] }}:3128
+    extra_args: --proxy {{ hostvars['jumpbox.student.lab']['privateIp'] }}:3128
   with_items:
   - docker
 - lineinfile:
     dest: /etc/sysconfig/docker
     regexp: ''
     insertafter: EOF
-    line: HTTP_PROXY="http://{{ hostvars['student.jumpbox']['privateIp'] }}:3128"
+    line: HTTP_PROXY="http://{{ hostvars['jumpbox.student.lab']['privateIp'] }}:3128"
 - systemd:
     name: docker
     enabled: yes

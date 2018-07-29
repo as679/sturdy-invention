@@ -97,6 +97,6 @@ if __name__ == '__main__':
             tags = instance_tags(document=data[id])
             hosts_file(tags.identity.privateIp, tags.identity.Lab_Name)
             if data[id]['public-ipv4']:
-                hosts_file(data[id]['public-ipv4'], '%s.public' % tags.identity.Lab_Name)
+                hosts_file(data[id]['public-ipv4'], 'public.%s' % tags.identity.Lab_Name)
             update_redis(r, tags.identity)
             r.publish('bootstrap', json.dumps({'bootstrap': tags.identity.Lab_Name}))

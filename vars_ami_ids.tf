@@ -12,7 +12,7 @@ variable "ami_avi_controller" {
     #eu-west-2 = "ami-09208f52b4a7fab78" #17.2.10
     #eu-west-2 = "ami-054cff7d4cce9453d" #17.2.9
     #eu-west-2 = "ami-0dd1d5a103bb33356" #17.2.11
-    eu-west-2 = "ami-009a263926acf0230" #17.2.12
+    eu-west-2 = "ami-02af3bef9afab4998" #17.2.12
   }
 }
 

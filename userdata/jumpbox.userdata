@@ -7,53 +7,9 @@ write_files:
       #!/bin/sh
       hostnamectl set-hostname --static ${hostname}
       echo 'preserve_hostname: true' >> /etc/cloud/cloud.cfg
-      sudo pip install boto3
       touch /tmp/cloud-init.done
     path: /opt/bootstrap.sh
     permissions: 0755
-  - content: |
-      #!/usr/bin/python
-      import requests
-      import sys
-      import socket
-      from time import sleep
-      ip = socket.gethostbyname(sys.argv[1])
-      new_pass = sys.argv[2]
-      session = requests.Session()
-      portal_up = False
-      while not portal_up:
-        print 'SLEEPING...'
-        sleep(1)
-        try:
-          session.get("http://%s/" % ip)
-        except requests.exceptions.SSLError:
-          portal_up = True
-          print "PORTAL_UP"
-          pass
-        except:
-          pass
-      login_status = session.post("https://%s/login" % ip, verify=False, data={'username': 'admin', 'password': '58NFaGDJm(PJH0G'}).status_code
-      print 'STATUS_CODE: %d' % login_status
-      while login_status != 200:
-        print 'SLEEPING...'
-        sleep(1)
-        login_status = session.post("https://%s/login" % ip, verify=False, data={'username': 'admin', 'password': '58NFaGDJm(PJH0G'}).status_code
-        print 'STATUS_CODE: %d' % login_status
-      session.headers.update({'Referer': "https://%s/" % ip})
-      session.headers.update({'X-CSRFToken': session.cookies['csrftoken']})
-      session.put("https://%s/api/useraccount" % ip, verify=False, json={'username': 'admin', 'password': new_pass, 'old_password': '58NFaGDJm(PJH0G'})
-    path: /root/update_avi_admin.py
-    permissions: 0700
-  - content: |
-      #!/usr/bin/env python
-      import redis
-      import json
-      data = {'controllers': {}, '_meta': {'hostvars': {}}}
-      r = redis.StrictRedis(host='localhost', port=6379, db=0)
-      data['controllers']['hosts'] = r.sscan('controllers')[1]
-      print json.dumps(data)
-      path: /etc/ansible/hosts
-      permissions: 0755
   - content: |
       - hosts: localhost
         connection: local
@@ -107,6 +63,8 @@ write_files:
       import sys
       import redis
       import threading
+      import urllib3
+      urllib3.disable_warnings()
       from avi.sdk.avi_api import ApiSession
       r = redis.StrictRedis(host='localhost', port=6379, db=0)
       def clean_up(ctrl, passwd):
