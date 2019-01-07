@@ -9,6 +9,8 @@
     state: present
   with_items:
   - docker
+  - dnsmasq
+  - bind-utils
 - pip:
     name: "{{ item }}"
     extra_args: --proxy {{ hostvars['jumpbox.student.lab']['privateIp'] }}:3128
@@ -23,34 +25,7 @@
     name: docker
     enabled: yes
     state: restarted
-- docker_image:
-    name: "{{ item }}"
-    state: present
-  with_items:
-  - bkimminich/juice-shop
-  - citizenstig/dvwa
-  - smarunich/avinetworks-demo
-- docker_container:
-    name: loose
-    image: smarunich/avinetworks-demo
-    ports:
-    - 80:80
-    - 443:443
-    detach: true
-    state: started
-- docker_container:
-    name: loose
-    image: bkimminich/juice-shop
-    ports:
-    - 8080:3000
-    detach: true
-    state: started
-- docker_container:
-    name: moose
-    image: citizenstig/dvwa
-    ports:
-    - 8081:80
-    detach: true
-    state: started
-    env:
-      MYSQL_PASS: "Chang3ME!"
+- systemd:
+    name: dnsmasq
+    enabled: yes
+    state: restarted

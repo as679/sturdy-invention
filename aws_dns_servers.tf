@@ -1,34 +1,35 @@
-# Terraform definition for the lab servers
+# Terraform definition for the lab dns_servers
 #
 
-data "template_file" "server_userdata" {
-  count    = "${var.server_count}"
-  template = "${file("${path.module}/userdata/server.userdata")}"
+data "template_file" "dns_server_userdata" {
+  count    = "${var.dns_server_count}"
+  template = "${file("${path.module}/userdata/dns_server.userdata")}"
 
   vars {
-    hostname = "server${count.index + 1}.lab"
+    hostname = "dns_server${count.index + 1}.lab"
     jump_ip  = "${aws_instance.jump.private_ip}"
     number   = "${count.index + 1}"
   }
 }
-resource "aws_instance" "server" {
-  count                  = "${var.server_count}"
+resource "aws_instance" "dns_server" {
+  count                  = "${var.dns_server_count}"
   ami                    = "${lookup(var.ami_centos, var.aws_region)}"
   availability_zone      = "${lookup(var.aws_az, var.aws_region)}"
   instance_type          = "${var.flavour_centos}"
   key_name               = "${var.key}"
   vpc_security_group_ids = ["${aws_security_group.jumpsg.id}"]
   subnet_id              = "${aws_subnet.privnet.id}"
-  private_ip             = "${format("%s%02d", var.base_ip, count.index + 1)}"
+  associate_public_ip_address = true
+  private_ip             = "${format("%s%02d", var.base_ip, 10 + count.index + 1  )}"
   source_dest_check      = false
-  user_data              = "${data.template_file.server_userdata.*.rendered[count.index]}"
+  user_data              = "${data.template_file.dns_server_userdata.*.rendered[count.index]}"
   depends_on             = ["aws_instance.jump"]
 
   tags {
-    Name  = "server${count.index + 1}"
+    Name  = "dns_server${count.index + 1}"
     Owner = "${var.owner}"
-    Lab_Group = "servers"
-    Lab_Name = "server${count.index + 1}.lab"
+    Lab_Group = "dns_servers"
+    Lab_Name = "dns_server${count.index + 1}.lab"
   }
 
   root_block_device {

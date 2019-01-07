@@ -8,7 +8,7 @@
 
 resource "aws_security_group" "ctrlsg" {
   description = "Allow incoming connections to the Avi GUI"
-  vpc_id      = "${aws_vpc.waf_vpc.id}"
+  vpc_id      = "${aws_vpc.GSLB_vpc.id}"
 
   tags {
     Name = "${var.id}_ctrlsg"
@@ -45,7 +45,7 @@ resource "aws_security_group" "ctrlsg" {
 
 resource "aws_security_group" "jumpsg" {
   description = "Allow incoming connections to the lab jumpbox."
-  vpc_id      = "${aws_vpc.waf_vpc.id}"
+  vpc_id      = "${aws_vpc.GSLB_vpc.id}"
 
   tags {
     Name = "${var.id}_jumpsg"

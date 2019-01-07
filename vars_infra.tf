@@ -16,11 +16,6 @@ variable "flavour_centos" {
   default     = "t2.medium"
 }
 
-variable "flavour_kali" {
-  description = "AWS instance type for servers etc"
-  default     = "t2.medium"
-}
-
 variable "flavour_avi" {
   description = "AWS instance type for Avi controllers"
   default     = "c4.2xlarge"
@@ -30,12 +25,6 @@ variable "vol_size_centos" {
   description = "Volume size for instances in G"
   default     = "15"
 }
-
-variable "vol_size_kali" {
-  description = "Volume size for instances in G"
-  default     = "25"
-}
-
 variable "vol_size_avi" {
   description = "Volume size for Avi controllers in G"
   default     = "64"

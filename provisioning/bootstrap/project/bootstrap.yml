@@ -14,9 +14,9 @@
   roles:
   - servers
 
-- hosts: kalis
+- hosts: dns_servers
   roles:
-  - kalis
+  - dns_servers
 
 - hosts: jumpbox
   roles:
