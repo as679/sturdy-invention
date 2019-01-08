@@ -133,7 +133,7 @@
           health_monitor_refs:
             - '/api/healthmonitor?name=System-DNS'
       virtualservice:
-        - name: vs_dns
+        - name: "{{ 'vs_dns_' + hostvars['jumpbox.student.lab']['region'] }}" 
           cloud_ref: '/api/cloud?name=AWS'
           pool_ref: '/api/pool?name=fallback_dns_pool'
           application_profile_ref: '/api/applicationprofile?name=System-DNS' 
@@ -160,7 +160,7 @@
           health_monitor_refs: 
             - '/api/healthmonitor?name=System-HTTP'
       virtualservice:
-        - name: vs_app
+        - name: "{{ 'vs_app_' + hostvars['jumpbox.student.lab']['region'] }}" 
           cloud_ref: '/api/cloud?name=AWS'
           pool_ref: '/api/pool?name=app_pool'
           application_profile_ref: '/api/applicationprofile?name=System-HTTP' 
