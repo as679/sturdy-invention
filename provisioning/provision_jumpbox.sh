@@ -7,6 +7,8 @@ systemctl enable squid
 systemctl start squid
 systemctl enable nginx
 systemctl start nginx
+pip install --upgrade avisdk 
+ansible-galaxy install avinetworks.avisdk avinetworks.aviconfig --force
 git clone git://github.com/ansible/ansible-runner /tmp/ansible-runner
 pip install /tmp/ansible-runner/
 chmod +x /usr/local/bin/handle_bootstrap.py

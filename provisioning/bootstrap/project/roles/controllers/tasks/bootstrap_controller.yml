@@ -98,11 +98,14 @@
           mgmt_network_name: "{{ hostvars['jumpbox.student.lab']['Lab_avi_management_network'] }}"
   register: cloud
 
-- name: Build server details
+- name: Build dns pool details
   set_fact:
-    server_ip: "{{ hostvars[item]['privateIp'] }}"
-  with_items:
-    - "{{ inventory_hostname | regex_replace('controller', 'server') }}"
+    dns_pool_server_ip: "{{ hostvars['dns_server2.lab']['privateIp'] }}"
+
+- set_fact:
+    app_pool_servers: "{{ app_pool_servers | default([]) + [{'port': 80 , 'ip': {'type': 'V4', 'addr': hostvars[item]['privateIp'] }}]}}"
+  when: hostvars[item]['Lab_Group'] == "servers" 
+  with_inventory_hostnames: all 
 
 - name: Build VIP network details
   avi_api_session:
@@ -113,53 +116,57 @@
   with_items:
     - "{{ hostvars['jumpbox.student.lab']['Lab_avi_vip_network'] }}"
 
-- name: Define JuiceShop
+- name: Define DNS Virtual Service
   import_role:
     name: avinetworks.aviconfig
   vars:
     avi_credentials: "{{ avi_credentials }}"
     avi_config:
       pool:
-        - name: juice-pool
+        - name: fallback_dns_pool
           cloud_ref: '/api/cloud?name=AWS'
-          default_server_port: 8080
+          default_server_port: 53
           servers:
             - ip:
-                addr: "{{ server_ip }}"
+                addr: "{{ dns_pool_server_ip }}"
                 type: V4
           health_monitor_refs:
-            - '/api/healthmonitor?name=System-HTTP'
+            - '/api/healthmonitor?name=System-DNS'
       virtualservice:
-        - name: juice
+        - name: vs_dns
           cloud_ref: '/api/cloud?name=AWS'
-          pool_ref: '/api/pool?name=juice-pool'
+          pool_ref: '/api/pool?name=fallback_dns_pool'
+          application_profile_ref: '/api/applicationprofile?name=System-DNS' 
+          network_profile_ref: '/api/networkprofile/?name=System-UDP-Per-Pkt'
           services:
-            - port: 80
+            - port: 53
+            - port: 53
+              override_network_profile_ref: '/api/networkprofile/?name=System-TCP-Proxy'
           subnet_uuid: "{{ subnet['results'][0]['obj']['results'][0]['uuid'] }}"
+          auto_allocate_floating_ip: true
           auto_allocate_ip: true
 
-- name: Define DVWA
+- name: Define App Virtual Service
   import_role:
     name: avinetworks.aviconfig
   vars:
     avi_credentials: "{{ avi_credentials }}"
     avi_config:
       pool:
-        - name: dvwa-pool
+        - name: app_pool
           cloud_ref: '/api/cloud?name=AWS'
-          default_server_port: 8081
-          servers:
-            - ip:
-                addr: "{{ server_ip }}"
-                type: V4
-          health_monitor_refs:
+          default_server_port: 80
+          servers: '{{ app_pool_servers }}'
+          health_monitor_refs: 
             - '/api/healthmonitor?name=System-HTTP'
       virtualservice:
-        - name: dvwa
+        - name: vs_app
           cloud_ref: '/api/cloud?name=AWS'
-          pool_ref: '/api/pool?name=dvwa-pool'
+          pool_ref: '/api/pool?name=app_pool'
+          application_profile_ref: '/api/applicationprofile?name=System-HTTP' 
           services:
             - port: 80
           subnet_uuid: "{{ subnet['results'][0]['obj']['results'][0]['uuid'] }}"
+          auto_allocate_floating_ip: true
           auto_allocate_ip: true
 
