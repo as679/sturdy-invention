@@ -87,7 +87,6 @@
 - name: Define AWS cloud configuration
   avi_cloud:
     avi_credentials: "{{ avi_credentials }}"
-    api_version: "{{ avi_version_again['obj']['version'] }}"  
     name: AWS
     vtype: CLOUD_AWS
     aws_configuration:
