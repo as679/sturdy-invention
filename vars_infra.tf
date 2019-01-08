@@ -6,11 +6,6 @@ variable "vpc_cidr" {
   default     = "172.20.0.0/16"
 }
 
-variable "base_ip" {
-  description = "Base IP of deployed instances"
-  default     = "172.20.1.1"
-}
-
 variable "flavour_centos" {
   description = "AWS instance type for servers etc"
   default     = "t2.medium"

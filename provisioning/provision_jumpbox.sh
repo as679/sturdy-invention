@@ -10,6 +10,7 @@ systemctl start nginx
 pip install --upgrade avisdk 
 ansible-galaxy install avinetworks.avisdk avinetworks.aviconfig --force
 git clone git://github.com/ansible/ansible-runner /tmp/ansible-runner
+yum install -y bind-utils vim tmux
 pip install /tmp/ansible-runner/
 chmod +x /usr/local/bin/handle_bootstrap.py
 chmod +x /usr/local/bin/handle_register.py

@@ -6,7 +6,6 @@ data "template_file" "jumpbox_userdata" {
 
   vars {
     hostname       = "${var.id}_jump"
-    base_ip        = "${var.base_ip}"
     server_count   = "${var.student_count}"
 
     vpc_id   = "${aws_vpc.GSLB_vpc.id}"
