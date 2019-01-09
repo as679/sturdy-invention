@@ -184,3 +184,22 @@
           auto_allocate_floating_ip: true
           auto_allocate_ip: true
 
+- name: Build VIP network details
+  avi_api_session:
+    avi_credentials: "{{ avi_credentials }}"
+    http_method: get
+    path: "virtualservice?include_name&services.0.port=53&fields=vip.floating_ip.addr"
+  register: dns_vip
+
+- set_fact:
+    gslb_domain: "{{ inventory_hostname | regex_replace('controller','global') }}"
+    dns_vs_ip: "{{ dns_vip['obj']['results'][0]['floating_ip']['addr'] }}"
+
+- group_by:
+    key: "{{ dns_vs_ip }}"
+- group_by:
+    key: "{{ gslb_domain }}"
+
+- debug:
+    var: hostvars[inventory_hostname]['dns_vs_ip']
+
