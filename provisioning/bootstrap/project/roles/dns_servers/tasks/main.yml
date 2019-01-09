@@ -29,7 +29,9 @@
     dest: "{{ '/etc/dnsmasq.conf' }}"
     insertafter: EOF
     line: server=/{{hostvars[item]['gslb_domain']}}/{{hostvars[item]['dns_vs_ip']}}
-  when: hostvars[item]['Lab_Group'] == "controllers" 
+  when:
+  - hostvars[item]['Lab_Group'] == "controllers"
+  - inventory_hostname == "dns_server1.lab"
   with_inventory_hostnames: all 
 - systemd:
     name: dnsmasq
