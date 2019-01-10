@@ -14,18 +14,28 @@ variable "avi_backup_admin_username" {}
 variable "avi_backup_admin_password" {}
 
 variable "student_count" {
-  description = "The class size. Each student gets a controller / server pairing"
+  description = "The class size. Each student gets a controller"
+  default     = 2
+}
+
+variable "server_count" {
+  description = "The class size. Students get a shared servers"
+  default     = 4
+}
+
+variable "dns_server_count" {
+  description = "The class size. Students get a shared servers"
   default     = 2
 }
 
 variable "id" {
   description = "A prefix for the naming of the objects / instances"
-  default     = "aviWAF"
+  default     = "aviGSLB"
 }
 
 variable "owner" {
   description = "Sets the AWS Owner tag appropriately"
-  default     = "Training"
+  default     = "aviGSLB_Training"
 }
 
 variable "aws_az" {
@@ -34,7 +44,7 @@ variable "aws_az" {
 
   default = {
     us-west-2 = "us-west-2a"
-    eu-west-2 = "eu-west-2a"
+    eu-west-1 = "eu-west-1a"
   }
 }
 

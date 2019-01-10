@@ -6,10 +6,9 @@ data "template_file" "jumpbox_userdata" {
 
   vars {
     hostname       = "${var.id}_jump"
-    base_ip        = "${var.base_ip}"
     server_count   = "${var.student_count}"
 
-    vpc_id   = "${aws_vpc.waf_vpc.id}"
+    vpc_id   = "${aws_vpc.GSLB_vpc.id}"
     region   = "${var.aws_region}"
     az       = "${lookup(var.aws_az, var.aws_region)}"
     mgmt_net = "${aws_subnet.mgmtnet.tags.Name}"
@@ -35,7 +34,7 @@ resource "aws_instance" "jump" {
     Owner = "${var.owner}"
     Lab_Group = "jumpbox"
     Lab_Name = "jumpbox.student.lab"
-    Lab_vpc_id = "${aws_vpc.waf_vpc.id}"
+    Lab_vpc_id = "${aws_vpc.GSLB_vpc.id}"
     Lab_avi_default_password = "${var.avi_default_password}"
     Lab_avi_admin_password = "${var.avi_admin_password}"
     Lab_avi_backup_admin_username = "${var.avi_backup_admin_username}"
@@ -100,44 +99,5 @@ resource "aws_instance" "jump" {
     scripts = [
       "provisioning/provision_jumpbox.sh"
     ]
-  }
-}
-
-data "template_file" "kali_userdata" {
-  count    = "${var.student_count}"
-  template = "${file("${path.module}/userdata/kali.userdata")}"
-
-  vars {
-    hostname = "${var.id}-student${count.index + 1}-kali"
-    jump_ip  = "${aws_instance.jump.private_ip}"
-    number   = "${count.index + 1}"
-  }
-}
-
-resource "aws_instance" "kali" {
-  count                  = "${var.student_count}"
-  ami                    = "${lookup(var.ami_kali, var.aws_region)}"
-  availability_zone      = "${lookup(var.aws_az, var.aws_region)}"
-  instance_type          = "${var.flavour_kali}"
-  key_name               = "${var.key}"
-  vpc_security_group_ids = ["${aws_security_group.jumpsg.id}"]
-  subnet_id              = "${aws_subnet.pubnet.id}"
-  associate_public_ip_address = true
-  iam_instance_profile        = "${aws_iam_instance_profile.lab_profile.name}"
-  source_dest_check      = false
-  user_data              = "${data.template_file.kali_userdata.*.rendered[count.index]}"
-  depends_on             = ["aws_instance.jump"]
-
-  tags {
-    Name  = "${var.id}_student${count.index + 1}_kali"
-    Owner = "${var.owner}"
-    Lab_Group = "kalis"
-    Lab_Name = "kali.student${count.index + 1}.lab"
-  }
-
-  root_block_device {
-    volume_type           = "standard"
-    volume_size           = "${var.vol_size_kali}"
-    delete_on_termination = "true"
   }
 }

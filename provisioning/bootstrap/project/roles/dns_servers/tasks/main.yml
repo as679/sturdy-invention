@@ -1,0 +1,39 @@
+---
+- lineinfile:
+    dest: /etc/yum.conf
+    regexp: ''
+    insertafter: EOF
+    line: proxy=http://{{ hostvars['jumpbox.student.lab']['privateIp'] }}:3128
+- yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - docker
+  - dnsmasq
+  - bind-utils
+- pip:
+    name: "{{ item }}"
+    extra_args: --proxy {{ hostvars['jumpbox.student.lab']['privateIp'] }}:3128
+  with_items:
+  - docker
+- lineinfile:
+    dest: /etc/sysconfig/docker
+    regexp: ''
+    insertafter: EOF
+    line: HTTP_PROXY="http://{{ hostvars['jumpbox.student.lab']['privateIp'] }}:3128"
+- systemd:
+    name: docker
+    enabled: yes
+    state: restarted
+- lineinfile:
+    dest: "{{ '/etc/dnsmasq.conf' }}"
+    insertafter: EOF
+    line: server=/{{hostvars[item]['gslb_domain']}}/{{hostvars[item]['dns_vs_ip']}}
+  when:
+  - hostvars[item]['Lab_Group'] == "controllers"
+  - inventory_hostname == "dns_server1.lab"
+  with_inventory_hostnames: all 
+- systemd:
+    name: dnsmasq
+    enabled: yes
+    state: restarted

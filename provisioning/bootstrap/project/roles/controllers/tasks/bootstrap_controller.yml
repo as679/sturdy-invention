@@ -98,11 +98,14 @@
           mgmt_network_name: "{{ hostvars['jumpbox.student.lab']['Lab_avi_management_network'] }}"
   register: cloud
 
-- name: Build server details
+- name: Build dns pool details
   set_fact:
-    server_ip: "{{ hostvars[item]['privateIp'] }}"
-  with_items:
-    - "{{ inventory_hostname | regex_replace('controller', 'server') }}"
+    dns_pool_server_ip: "{{ hostvars['dns_server2.lab']['privateIp'] }}"
+
+- set_fact:
+    app_pool_servers: "{{ app_pool_servers | default([]) + [{'port': 80 , 'ip': {'type': 'V4', 'addr': hostvars[item]['privateIp'] }}]}}"
+  when: hostvars[item]['Lab_Group'] == "servers" 
+  with_inventory_hostnames: all 
 
 - name: Build VIP network details
   avi_api_session:
@@ -113,53 +116,90 @@
   with_items:
     - "{{ hostvars['jumpbox.student.lab']['Lab_avi_vip_network'] }}"
 
-- name: Define JuiceShop
+- name: Define GSLB SE Group
+  avi_serviceenginegroup:
+    avi_credentials: "{{ avi_credentials }}"
+    api_version: "{{ avi_version_again['obj']['version'] }}" 
+    name: seg_gslb01
+    cloud_ref: '/api/cloud?name=AWS'
+    algo: 'PLACEMENT_ALGO_PACKED' 
+    ha_mode: 'HA_MODE_SHARED'
+    extra_shared_config_memory: 2000
+    max_vs_per_se: 1
+    max_se: 2
+    buffer_se: 1
+    se_name_prefix: 'gslb'
+
+- name: Define DNS Virtual Service
   import_role:
     name: avinetworks.aviconfig
   vars:
     avi_credentials: "{{ avi_credentials }}"
     avi_config:
       pool:
-        - name: juice-pool
+        - name: fallback_dns_pool
           cloud_ref: '/api/cloud?name=AWS'
-          default_server_port: 8080
+          default_server_port: 53
           servers:
             - ip:
-                addr: "{{ server_ip }}"
+                addr: "{{ dns_pool_server_ip }}"
                 type: V4
           health_monitor_refs:
+            - '/api/healthmonitor?name=System-DNS'
+      virtualservice:
+        - name: "{{ 'vs_dns_' + hostvars['jumpbox.student.lab']['region'] }}" 
+          cloud_ref: '/api/cloud?name=AWS'
+          pool_ref: '/api/pool?name=fallback_dns_pool'
+          application_profile_ref: '/api/applicationprofile?name=System-DNS' 
+          network_profile_ref: '/api/networkprofile/?name=System-UDP-Per-Pkt'
+          services:
+            - port: 53
+            - port: 53
+              override_network_profile_ref: '/api/networkprofile/?name=System-TCP-Proxy'
+          subnet_uuid: "{{ subnet['results'][0]['obj']['results'][0]['uuid'] }}"
+          auto_allocate_floating_ip: true
+          auto_allocate_ip: true
+          se_group_ref: '/api/serviceenginegroup?name=seg_gslb01' 
+- name: Define App Virtual Service
+  import_role:
+    name: avinetworks.aviconfig
+  vars:
+    avi_credentials: "{{ avi_credentials }}"
+    avi_config:
+      pool:
+        - name: app_pool
+          cloud_ref: '/api/cloud?name=AWS'
+          default_server_port: 80
+          servers: '{{ app_pool_servers }}'
+          health_monitor_refs: 
             - '/api/healthmonitor?name=System-HTTP'
       virtualservice:
-        - name: juice
+        - name: "{{ 'vs_app_' + hostvars['jumpbox.student.lab']['region'] }}" 
           cloud_ref: '/api/cloud?name=AWS'
-          pool_ref: '/api/pool?name=juice-pool'
+          pool_ref: '/api/pool?name=app_pool'
+          application_profile_ref: '/api/applicationprofile?name=System-HTTP' 
           services:
             - port: 80
           subnet_uuid: "{{ subnet['results'][0]['obj']['results'][0]['uuid'] }}"
+          auto_allocate_floating_ip: true
           auto_allocate_ip: true
 
-- name: Define DVWA
-  import_role:
-    name: avinetworks.aviconfig
-  vars:
+- name: Build VIP network details
+  avi_api_session:
     avi_credentials: "{{ avi_credentials }}"
-    avi_config:
-      pool:
-        - name: dvwa-pool
-          cloud_ref: '/api/cloud?name=AWS'
-          default_server_port: 8081
-          servers:
-            - ip:
-                addr: "{{ server_ip }}"
-                type: V4
-          health_monitor_refs:
-            - '/api/healthmonitor?name=System-HTTP'
-      virtualservice:
-        - name: dvwa
-          cloud_ref: '/api/cloud?name=AWS'
-          pool_ref: '/api/pool?name=dvwa-pool'
-          services:
-            - port: 80
-          subnet_uuid: "{{ subnet['results'][0]['obj']['results'][0]['uuid'] }}"
-          auto_allocate_ip: true
+    http_method: get
+    path: "virtualservice?include_name&services.0.port=53&fields=vip.floating_ip.addr"
+  register: dns_vip
+
+- set_fact:
+    gslb_domain: "{{ inventory_hostname | regex_replace('controller','global') }}"
+    dns_vs_ip: "{{ dns_vip['obj']['results'][0]['floating_ip']['addr'] }}"
+
+- group_by:
+    key: "{{ dns_vs_ip }}"
+- group_by:
+    key: "{{ gslb_domain }}"
+
+- debug:
+    var: hostvars[inventory_hostname]['dns_vs_ip']
 

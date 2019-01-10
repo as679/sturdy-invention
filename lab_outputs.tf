@@ -9,14 +9,6 @@ output "JumpHost_PrivateIP" {
   value = "${aws_instance.jump.private_ip}"
 }
 
-output "Kali_PublicIP" {
-  value = "${aws_instance.kali.*.public_ip}"
-}
-
-output "Kali_PrivateIP" {
-  value = "${aws_instance.kali.*.private_ip}"
-}
-
 output "Controller_PublicIP" {
   value = "${aws_instance.ctrl.*.public_ip}"
 }
@@ -27,4 +19,12 @@ output "Controller_PrivateIP" {
 
 output "Server_PrivateIP" {
   value = "${aws_instance.server.*.private_ip}"
+}
+
+output "DNS_Server_PrivateIP" {
+  value = "${aws_instance.dns_server.*.private_ip}"
+}
+
+output "DNS_Server_PublicIP" {
+  value = "${aws_instance.dns_server.*.public_ip}"
 }
