@@ -26,9 +26,25 @@
     enabled: yes
     state: restarted
 - lineinfile:
+    dest: "{{ '/etc/hosts' }}"
+    regexp: "{{hostvars['dns_server2.lab']['privateIp']}} {{hostvars[item]['Lab_Name'] | regex_replace('controller','ns.local')}}"
+    insertafter: EOF
+    line: "{{hostvars['dns_server2.lab']['privateIp']}} {{hostvars[item]['Lab_Name'] | regex_replace('controller','ns.local')}}"
+  when:
+  - hostvars[item]['Lab_Group'] == "controllers"
+  with_inventory_hostnames: all 
+- lineinfile:
     dest: "{{ '/etc/dnsmasq.conf' }}"
     insertafter: EOF
     line: server=/{{hostvars[item]['gslb_domain']}}/{{hostvars[item]['dns_vs_ip']}}
+  when:
+  - hostvars[item]['Lab_Group'] == "controllers"
+  - inventory_hostname == "dns_server1.lab"
+  with_inventory_hostnames: all 
+- lineinfile:
+    dest: "{{ '/etc/dnsmasq.conf' }}"
+    insertafter: EOF
+    line: server=/{{ hostvars[item]['Lab_Name'] | regex_replace('controller','local')}}/{{hostvars['dns_server2.lab']['privateIp']}}
   when:
   - hostvars[item]['Lab_Group'] == "controllers"
   - inventory_hostname == "dns_server1.lab"
