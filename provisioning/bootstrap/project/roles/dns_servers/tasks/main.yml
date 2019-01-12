@@ -21,10 +21,19 @@
     regexp: ''
     insertafter: EOF
     line: HTTP_PROXY="http://{{ hostvars['jumpbox.student.lab']['privateIp'] }}:3128"
+- docker_image:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - avinetworks/avitools:18.2.1
 - systemd:
     name: docker
     enabled: yes
     state: restarted
+- lineinfile:
+    dest: /etc/bashrc
+    insertafter: EOF
+    line: alias dig="docker run --net=host -it avinetworks/avitools:18.2.1 dig"
 - lineinfile:
     dest: /etc/resolv.conf
     insertbefore: BOF
