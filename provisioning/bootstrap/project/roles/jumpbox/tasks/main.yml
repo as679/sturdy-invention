@@ -25,6 +25,7 @@
     line: nameserver {{hostvars['dns_server1.lab']['privateIp']}}
 - docker_container:
     name: avitools
+    hostname: avitools
     image: avinetworks/avitools:18.2.1
     command: bash
     volumes: /opt:/opt
