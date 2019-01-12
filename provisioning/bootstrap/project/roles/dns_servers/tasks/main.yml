@@ -21,15 +21,15 @@
     regexp: ''
     insertafter: EOF
     line: HTTP_PROXY="http://{{ hostvars['jumpbox.student.lab']['privateIp'] }}:3128"
+- systemd:
+    name: docker
+    enabled: yes
+    state: restarted
 - docker_image:
     name: "{{ item }}"
     state: present
   with_items:
   - avinetworks/avitools:18.2.1
-- systemd:
-    name: docker
-    enabled: yes
-    state: restarted
 - lineinfile:
     dest: /etc/bashrc
     insertafter: EOF
@@ -37,7 +37,7 @@
 - lineinfile:
     dest: /etc/resolv.conf
     insertbefore: BOF
-    line: nameserver {{hostvars['dns_server1.lab']['privateIp']}} 
+    line: nameserver {{hostvars['dns_server1.lab']['privateIp']}}
 - lineinfile:
     dest: /etc/hosts
     regexp: "{{hostvars['dns_server2.lab']['privateIp']}} {{hostvars[item]['Lab_Name'] | regex_replace('controller','ns.local')}}"
@@ -45,7 +45,7 @@
     line: "{{hostvars['dns_server2.lab']['privateIp']}} {{hostvars[item]['Lab_Name'] | regex_replace('controller','ns.local')}}"
   when:
   - hostvars[item]['Lab_Group'] == "controllers"
-  with_inventory_hostnames: all 
+  with_inventory_hostnames: all
 - lineinfile:
     dest: /etc/dnsmasq.conf
     insertafter: EOF
@@ -53,7 +53,7 @@
   when:
   - hostvars[item]['Lab_Group'] == "controllers"
   - inventory_hostname == "dns_server1.lab"
-  with_inventory_hostnames: all 
+  with_inventory_hostnames: all
 - lineinfile:
     dest: /etc/dnsmasq.conf
     insertafter: EOF
@@ -61,7 +61,7 @@
   when:
   - hostvars[item]['Lab_Group'] == "controllers"
   - inventory_hostname == "dns_server1.lab"
-  with_inventory_hostnames: all 
+  with_inventory_hostnames: all
 - systemd:
     name: dnsmasq
     enabled: yes

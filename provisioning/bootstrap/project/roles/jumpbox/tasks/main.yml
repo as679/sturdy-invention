@@ -3,4 +3,33 @@
     name: "{{ item }}"
     state: present
   with_items:
+  - docker
   - dnsmasq
+  - bind-utils
+- systemd:
+    name: docker
+    enabled: yes
+    state: restarted
+- docker_image:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - avinetworks/avitools:18.2.1
+- lineinfile:
+    dest: /etc/bashrc
+    insertafter: EOF
+    line: alias dig="docker run --net=host -it avinetworks/avitools:18.2.1 dig"
+- lineinfile:
+    dest: /etc/resolv.conf
+    insertbefore: BOF
+    line: nameserver {{hostvars['dns_server1.lab']['privateIp']}}
+- docker_container:
+    name: avitools
+    image: avinetworks/avitools:18.2.1
+    command: bash
+    volumes: /opt:/opt
+    tty: yes
+    interactive: yes
+    restart: yes
+    detach: true
+    state: started
