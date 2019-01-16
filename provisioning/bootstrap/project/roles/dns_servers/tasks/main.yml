@@ -25,14 +25,43 @@
     name: docker
     enabled: yes
     state: restarted
+- docker_image:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - avinetworks/avitools:18.2.1
 - lineinfile:
-    dest: "{{ '/etc/dnsmasq.conf' }}"
+    dest: /etc/bashrc
+    insertafter: EOF
+    line: alias dig="docker run --net=host -it avinetworks/avitools:18.2.1 dig"
+- lineinfile:
+    dest: /etc/resolv.conf
+    insertbefore: BOF
+    line: nameserver {{hostvars['dns_server1.lab']['privateIp']}}
+- lineinfile:
+    dest: /etc/hosts
+    regexp: "{{hostvars['dns_server2.lab']['privateIp']}} {{hostvars[item]['Lab_Name'] | regex_replace('controller','ns.local')}}"
+    insertafter: EOF
+    line: "{{hostvars['dns_server2.lab']['privateIp']}} {{hostvars[item]['Lab_Name'] | regex_replace('controller','ns.local')}}"
+  when:
+  - hostvars[item]['Lab_Group'] == "controllers"
+  with_inventory_hostnames: all
+- lineinfile:
+    dest: /etc/dnsmasq.conf
     insertafter: EOF
     line: server=/{{hostvars[item]['gslb_domain']}}/{{hostvars[item]['dns_vs_ip']}}
   when:
   - hostvars[item]['Lab_Group'] == "controllers"
   - inventory_hostname == "dns_server1.lab"
-  with_inventory_hostnames: all 
+  with_inventory_hostnames: all
+- lineinfile:
+    dest: /etc/dnsmasq.conf
+    insertafter: EOF
+    line: server=/{{ hostvars[item]['Lab_Name'] | regex_replace('controller','local')}}/{{hostvars['dns_server2.lab']['privateIp']}}
+  when:
+  - hostvars[item]['Lab_Group'] == "controllers"
+  - inventory_hostname == "dns_server1.lab"
+  with_inventory_hostnames: all
 - systemd:
     name: dnsmasq
     enabled: yes

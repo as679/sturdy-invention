@@ -129,6 +129,7 @@
     max_se: 2
     buffer_se: 1
     se_name_prefix: 'gslb'
+    instance_flavor: "m3.large" 
 
 - name: Define DNS Virtual Service
   import_role:
