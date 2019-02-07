@@ -7,12 +7,9 @@ variable "ami_avi_controller" {
   description = "Avi AMI by region updated 11/04/18 - 17.2.8-9031"
 
   default = {
-    us-west-2 = "ami-044157c009c8b2c19"
-    #eu-west-2 = "ami-02c40da7ac2a43b21" #17.2.8
-    #eu-west-2 = "ami-09208f52b4a7fab78" #17.2.10
-    #eu-west-2 = "ami-054cff7d4cce9453d" #17.2.9
-    #eu-west-2 = "ami-0dd1d5a103bb33356" #17.2.11
+    us-west-2 = "ami-03a31f305a0d65ae4" #17.2.15
     eu-west-2 = "ami-02af3bef9afab4998" #17.2.12
+    eu-west-1 = "ami-08e9261d1137c972c"
   }
 }
 
@@ -24,7 +21,9 @@ variable "ami_centos" {
   description = "CentOS AMI by region updated 05/06/18"
 
   default = {
+    us-west-2 = "ami-041306c20ecd1c23c"
     eu-west-2 = "ami-04468f4b62ced6706"
+    eu-west-1 = "ami-04b7ddd138f4401de"
   }
 }
 
@@ -36,6 +35,8 @@ variable "ami_kali" {
   description = "Kali Linux AMI by region updated 05/06/18"
 
   default = {
+    us-west-2 = "ami-0c4d06cabfcbbc91b"
     eu-west-2 = "ami-0252f4d21ee383ea4" #latest Packer build
+    eu-west-1 = "ami-0ab1e7fa3bba64ef6"
   }
 }

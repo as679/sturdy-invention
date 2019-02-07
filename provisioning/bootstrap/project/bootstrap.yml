@@ -1,7 +1,7 @@
 ---
 - hosts: controllers
   vars:
-    avi_credentials:
+    avi_creds:
       controller: "{{ inventory_hostname }}"
       username: admin
       password: "{{ hostvars['jumpbox.student.lab']['Lab_avi_default_password'] }}"

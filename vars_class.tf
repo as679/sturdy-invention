@@ -15,7 +15,7 @@ variable "avi_backup_admin_password" {}
 
 variable "student_count" {
   description = "The class size. Each student gets a controller / server pairing"
-  default     = 2
+  default     = 1
 }
 
 variable "id" {
@@ -35,6 +35,7 @@ variable "aws_az" {
   default = {
     us-west-2 = "us-west-2a"
     eu-west-2 = "eu-west-2a"
+    eu-west-1 = "eu-west-1a"
   }
 }
 
