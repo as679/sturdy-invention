@@ -1,7 +1,7 @@
 ---
 - name: "Wait for the portal to become active"
   uri:
-    url: "https://{{ inventory_hostname }}/"
+    url: "https://{{ inventory_hostname }}/api/initial-data"
     validate_certs: no
     status_code: 200
   register: result
@@ -9,47 +9,30 @@
   retries: 300
   delay: 10
 
-- name: Get Avi version information
-  avi_api_version:
-    avi_credentials: "{{ avi_creds }}"
-  register: avi_version
-  ignore_errors: true
+- name: Refresh in-memory inventory
+  meta: refresh_inventory
 
 - name: Prepare Avi credentials
   set_fact:
-    avi_credentials: "{{ avi_creds | combine({ item.key: item.value }) }}"
+    avi_credentials: {}
+
+- name: Prepare Avi credentials
+  set_fact:
+    avi_credentials: "{{ avi_credentials | combine({ item.key: item.value }) }}"
   with_items:
   - { key: 'password', value: "{{ hostvars['jumpbox.student.lab']['Lab_avi_admin_password'] }}" }
-
-- name: Prepare Avi credentials with version information if available
-  set_fact:
-    avi_credentials: "{{ avi_creds | combine({ item.key: item.value }) }}"
-  with_items:
-  - { key: 'avi_version', value:  "{{ avi_version['obj']['version'] }}" }
-  when: avi_version is not failed
+  - { key: 'avi_version', value: "{{ result['json']['version']['Version'] }}" }
+  - { key: 'controller', value: "{{ avi_creds['controller'] }}" }
+  - { key: 'username', value: "{{ avi_creds['username'] }}" }
 
 - name: Update admin user account if required
   avi_useraccount:
-    avi_credentials: "{{ avi_creds }}"
+    avi_credentials: "{{ avi_credentials }}"
     old_password: "{{ hostvars['jumpbox.student.lab']['Lab_avi_default_password'] }}"
-  when: avi_version is not failed
-
-- name: Get Avi version information again if required
-  avi_api_version:
-    avi_credentials: "{{ avi_creds }}"
-  register: avi_version_again
-  when: avi_version is failed
-
-- name: Prepare Avi credentials with version information if required
-  set_fact:
-    avi_credentials: "{{ avi_creds | combine({ item.key: item.value }) }}"
-  with_items:
-  - { key: 'avi_version', value:  "{{ avi_version_again['obj']['version'] }}" }
-  when: avi_version is failed
 
 - name: Basic system configuration
   avi_systemconfiguration:
-    avi_credentials: "{{ avi_creds }}"
+    avi_credentials: "{{ avi_credentials }}"
     dns_configuration:
       server_list:
         - addr: 8.8.8.8
@@ -69,7 +52,7 @@
 
 - name: Create backup admin account
   avi_api_session:
-    avi_credentials: "{{ avi_creds }}"
+    avi_credentials: "{{ avi_credentials }}"
     http_method: post
     path: user
     data:
@@ -86,7 +69,7 @@
 
 - name: Define AWS cloud configuration
   avi_cloud:
-    avi_credentials: "{{ avi_creds }}"
+    avi_credentials: "{{ avi_credentials }}"
     name: AWS
     vtype: CLOUD_AWS
     aws_configuration:
@@ -106,7 +89,7 @@
 
 - name: Build VIP network details
   avi_api_session:
-    avi_credentials: "{{ avi_creds }}"
+    avi_credentials: "{{ avi_credentials }}"
     http_method: get
     path: "networksubnetlist?name={{ item }}&cloud_uuid={{ cloud['obj']['uuid'] }}"
   register: subnet
@@ -117,7 +100,7 @@
   import_role:
     name: avinetworks.aviconfig
   vars:
-    avi_credentials: "{{ avi_creds }}"
+    avi_credentials: "{{ avi_credentials }}"
     avi_config:
       pool:
         - name: juice-pool
@@ -142,7 +125,7 @@
   import_role:
     name: avinetworks.aviconfig
   vars:
-    avi_credentials: "{{ avi_creds }}"
+    avi_credentials: "{{ avi_credentials }}"
     avi_config:
       pool:
         - name: dvwa-pool
