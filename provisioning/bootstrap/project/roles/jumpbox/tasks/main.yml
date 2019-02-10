@@ -19,10 +19,6 @@
     dest: /etc/bashrc
     insertafter: EOF
     line: alias dig="docker run --net=host -it avinetworks/avitools:18.2.1 dig"
-- lineinfile:
-    dest: /etc/resolv.conf
-    insertbefore: BOF
-    line: nameserver {{hostvars['dns_server1.lab']['privateIp']}}
 - docker_container:
     name: avitools
     hostname: avitools

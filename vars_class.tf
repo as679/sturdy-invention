@@ -23,19 +23,14 @@ variable "server_count" {
   default     = 4
 }
 
-variable "dns_server_count" {
-  description = "The class size. Students get a shared servers"
-  default     = 2
-}
-
 variable "id" {
   description = "A prefix for the naming of the objects / instances"
-  default     = "aviGSLB"
+  default     = "avi101"
 }
 
 variable "owner" {
   description = "Sets the AWS Owner tag appropriately"
-  default     = "aviGSLB_Training"
+  default     = "avi101_Training"
 }
 
 variable "aws_az" {

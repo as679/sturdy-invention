@@ -8,7 +8,7 @@ data "template_file" "jumpbox_userdata" {
     hostname       = "${var.id}_jump"
     server_count   = "${var.student_count}"
 
-    vpc_id   = "${aws_vpc.GSLB_vpc.id}"
+    vpc_id   = "${aws_vpc.101_vpc.id}"
     region   = "${var.aws_region}"
     az       = "${lookup(var.aws_az, var.aws_region)}"
     mgmt_net = "${aws_subnet.mgmtnet.tags.Name}"
@@ -34,7 +34,7 @@ resource "aws_instance" "jump" {
     Owner = "${var.owner}"
     Lab_Group = "jumpbox"
     Lab_Name = "jumpbox.student.lab"
-    Lab_vpc_id = "${aws_vpc.GSLB_vpc.id}"
+    Lab_vpc_id = "${aws_vpc.101_vpc.id}"
     Lab_avi_default_password = "${var.avi_default_password}"
     Lab_avi_admin_password = "${var.avi_admin_password}"
     Lab_avi_backup_admin_username = "${var.avi_backup_admin_username}"

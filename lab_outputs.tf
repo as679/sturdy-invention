@@ -21,10 +21,3 @@ output "Server_PrivateIP" {
   value = "${aws_instance.server.*.private_ip}"
 }
 
-output "DNS_Server_PrivateIP" {
-  value = "${aws_instance.dns_server.*.private_ip}"
-}
-
-output "DNS_Server_PublicIP" {
-  value = "${aws_instance.dns_server.*.public_ip}"
-}
