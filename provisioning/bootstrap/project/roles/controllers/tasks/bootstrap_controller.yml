@@ -29,6 +29,7 @@
   avi_useraccount:
     avi_credentials: "{{ avi_credentials }}"
     old_password: "{{ hostvars['jumpbox.student.lab']['Lab_avi_default_password'] }}"
+  ignore_errors: yes
 
 - name: Basic system configuration
   avi_systemconfiguration:
@@ -80,12 +81,6 @@
         - availability_zone: "{{ hostvars['jumpbox.student.lab']['availabilityZone'] }}"
           mgmt_network_name: "{{ hostvars['jumpbox.student.lab']['Lab_avi_management_network'] }}"
   register: cloud
-
-- name: Build server details
-  set_fact:
-    server_ip: "{{ hostvars[item]['privateIp'] }}"
-  with_items:
-    - "{{ inventory_hostname | regex_replace('controller', 'server') }}"
 
 - name: Build VIP network details
   avi_api_session:
