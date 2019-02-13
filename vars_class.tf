@@ -43,6 +43,7 @@ variable "aws_az" {
   description = "Control of placement of objects within the AWS Availability Zone"
 
   default = {
+    us-east-1 = "us-east-1a"
     us-west-2 = "us-west-2a"
     eu-west-1 = "eu-west-1a"
   }

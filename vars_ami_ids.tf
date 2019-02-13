@@ -7,8 +7,11 @@ variable "ami_avi_controller" {
   description = "Avi AMI by region updated 07/01/19"
 
   default = {
-    eu-west-1 = "ami-0e35e93a84ee4e733" #17.2.15
-    us-west-2 = "ami-03a31f305a0d65ae4" #17.2.15
+     eu-west-1 = "ami-0cc46fd12b448e3bd" #18.2.2
+     us-east-1 = "ami-0e7e8ce2070cdf84a" #18.2.2
+     us-west-2 = "ami-07679341fa956f8fd" #18.2.2
+#    eu-west-1 = "ami-0e35e93a84ee4e733" #17.2.15
+#    us-west-2 = "ami-03a31f305a0d65ae4" #17.2.15
 #    eu-west-1 = "ami-08e9261d1137c972c" #17.2.14
 #    us-west-2 = "ami-0b90c7bdd7a7b777f" #17.2.14
   }
@@ -24,6 +27,7 @@ variable "ami_centos" {
 
   default = {
     eu-west-1 = "ami-05eb3891651ec6912"
+    us-east-1 = "ami-0d2a3cc95403fea54"
     us-west-2 = "ami-01cd2786f990efdf5"
   }
 }
