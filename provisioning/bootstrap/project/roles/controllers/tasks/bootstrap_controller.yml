@@ -1,7 +1,7 @@
 ---
 - name: "Wait for the portal to become active"
   uri:
-    url: "https://{{ inventory_hostname }}/"
+    url: "https://{{ inventory_hostname }}/api/initial-data"
     validate_certs: no
     status_code: 200
   register: result
@@ -9,43 +9,27 @@
   retries: 300
   delay: 10
 
-- name: Get Avi version information
-  avi_api_version:
-    avi_credentials: "{{ avi_credentials }}"
-  register: avi_version
-  ignore_errors: true
+- name: Refresh in-memory inventory
+  meta: refresh_inventory
+
+- name: Prepare Avi credentials
+  set_fact:
+    avi_credentials: {}
 
 - name: Prepare Avi credentials
   set_fact:
     avi_credentials: "{{ avi_credentials | combine({ item.key: item.value }) }}"
   with_items:
   - { key: 'password', value: "{{ hostvars['jumpbox.student.lab']['Lab_avi_admin_password'] }}" }
-
-- name: Prepare Avi credentials with version information if available
-  set_fact:
-    avi_credentials: "{{ avi_credentials | combine({ item.key: item.value }) }}"
-  with_items:
-  - { key: 'avi_version', value:  "{{ avi_version['obj']['version'] }}" }
-  when: avi_version is not failed
+  - { key: 'avi_version', value: "{{ result['json']['version']['Version'] }}" }
+  - { key: 'controller', value: "{{ avi_creds['controller'] }}" }
+  - { key: 'username', value: "{{ avi_creds['username'] }}" }
 
 - name: Update admin user account if required
   avi_useraccount:
     avi_credentials: "{{ avi_credentials }}"
     old_password: "{{ hostvars['jumpbox.student.lab']['Lab_avi_default_password'] }}"
-  when: avi_version is not failed
-
-- name: Get Avi version information again if required
-  avi_api_version:
-    avi_credentials: "{{ avi_credentials }}"
-  register: avi_version_again
-  when: avi_version is failed
-
-- name: Prepare Avi credentials with version information if required
-  set_fact:
-    avi_credentials: "{{ avi_credentials | combine({ item.key: item.value }) }}"
-  with_items:
-  - { key: 'avi_version', value:  "{{ avi_version_again['obj']['version'] }}" }
-  when: avi_version is failed
+  ignore_errors: yes
 
 - name: Basic system configuration
   avi_systemconfiguration:
@@ -104,8 +88,8 @@
 
 - set_fact:
     app_pool_servers: "{{ app_pool_servers | default([]) + [{'port': 80 , 'ip': {'type': 'V4', 'addr': hostvars[item]['privateIp'] }}]}}"
-  when: hostvars[item]['Lab_Group'] == "servers" 
-  with_inventory_hostnames: all 
+  when: hostvars[item]['Lab_Group'] == "servers"
+  with_inventory_hostnames: all
 
 - name: Build VIP network details
   avi_api_session:
@@ -119,17 +103,16 @@
 - name: Define GSLB SE Group
   avi_serviceenginegroup:
     avi_credentials: "{{ avi_credentials }}"
-    api_version: "{{ avi_version_again['obj']['version'] }}" 
     name: seg_gslb01
     cloud_ref: '/api/cloud?name=AWS'
-    algo: 'PLACEMENT_ALGO_PACKED' 
+    algo: 'PLACEMENT_ALGO_PACKED'
     ha_mode: 'HA_MODE_SHARED'
     extra_shared_config_memory: 2000
     max_vs_per_se: 1
     max_se: 2
     buffer_se: 1
     se_name_prefix: 'gslb'
-    instance_flavor: "m3.large" 
+    instance_flavor: "m3.large"
 
 - name: Define DNS Virtual Service
   import_role:
@@ -148,10 +131,10 @@
           health_monitor_refs:
             - '/api/healthmonitor?name=System-DNS'
       virtualservice:
-        - name: "{{ 'vs_dns_' + hostvars['jumpbox.student.lab']['region'] }}" 
+        - name: "{{ 'vs_dns_' + hostvars['jumpbox.student.lab']['region'] }}"
           cloud_ref: '/api/cloud?name=AWS'
           pool_ref: '/api/pool?name=fallback_dns_pool'
-          application_profile_ref: '/api/applicationprofile?name=System-DNS' 
+          application_profile_ref: '/api/applicationprofile?name=System-DNS'
           network_profile_ref: '/api/networkprofile/?name=System-UDP-Per-Pkt'
           services:
             - port: 53
@@ -160,7 +143,7 @@
           subnet_uuid: "{{ subnet['results'][0]['obj']['results'][0]['uuid'] }}"
           auto_allocate_floating_ip: true
           auto_allocate_ip: true
-          se_group_ref: '/api/serviceenginegroup?name=seg_gslb01' 
+          se_group_ref: '/api/serviceenginegroup?name=seg_gslb01'
 - name: Define App Virtual Service
   import_role:
     name: avinetworks.aviconfig
@@ -172,13 +155,13 @@
           cloud_ref: '/api/cloud?name=AWS'
           default_server_port: 80
           servers: '{{ app_pool_servers }}'
-          health_monitor_refs: 
+          health_monitor_refs:
             - '/api/healthmonitor?name=System-HTTP'
       virtualservice:
-        - name: "{{ 'vs_app_' + hostvars['jumpbox.student.lab']['region'] }}" 
+        - name: "{{ 'vs_app_' + hostvars['jumpbox.student.lab']['region'] }}"
           cloud_ref: '/api/cloud?name=AWS'
           pool_ref: '/api/pool?name=app_pool'
-          application_profile_ref: '/api/applicationprofile?name=System-HTTP' 
+          application_profile_ref: '/api/applicationprofile?name=System-HTTP'
           services:
             - port: 80
           subnet_uuid: "{{ subnet['results'][0]['obj']['results'][0]['uuid'] }}"
@@ -203,4 +186,3 @@
 
 - debug:
     var: hostvars[inventory_hostname]['dns_vs_ip']
-
