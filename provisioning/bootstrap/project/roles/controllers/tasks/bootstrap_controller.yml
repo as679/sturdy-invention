@@ -182,12 +182,12 @@
   avi_api_session:
     avi_credentials: "{{ avi_credentials }}"
     http_method: get
-    path: "virtualservice?include_name&services.0.port=53&fields=vip.floating_ip.addr"
+    path: "virtualservice?include_name&services.0.port=53"
   register: dns_vip
 
 - set_fact:
     gslb_domain: "{{ inventory_hostname | regex_replace('controller','global') }}"
-    dns_vs_ip: "{{ dns_vip['obj']['results'][0]['floating_ip']['addr'] }}"
+    dns_vs_ip: "{{ dns_vip['obj']['results'][0]['vip'][0]['floating_ip']['addr'] }}"
 
 - group_by:
     key: "{{ dns_vs_ip }}"
