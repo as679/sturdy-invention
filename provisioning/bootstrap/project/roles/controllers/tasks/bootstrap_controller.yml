@@ -130,6 +130,13 @@
                 type: V4
           health_monitor_refs:
             - '/api/healthmonitor?name=System-DNS'
+      vsvip:
+        - name: vsvip_dns
+          cloud_ref: '/api/cloud?name=AWS'
+          vip:
+            - auto_allocate_ip: true
+              subnet_uuid: "{{ subnet['results'][0]['obj']['results'][0]['uuid'] }}"
+              auto_allocate_floating_ip: true
       virtualservice:
         - name: "{{ 'vs_dns_' + hostvars['jumpbox.student.lab']['region'] }}"
           cloud_ref: '/api/cloud?name=AWS'
@@ -140,9 +147,7 @@
             - port: 53
             - port: 53
               override_network_profile_ref: '/api/networkprofile/?name=System-TCP-Proxy'
-          subnet_uuid: "{{ subnet['results'][0]['obj']['results'][0]['uuid'] }}"
-          auto_allocate_floating_ip: true
-          auto_allocate_ip: true
+          vsvip_ref: '/api/vsvip?name=vsvip_dns'
           se_group_ref: '/api/serviceenginegroup?name=seg_gslb01'
 - name: Define App Virtual Service
   import_role:
