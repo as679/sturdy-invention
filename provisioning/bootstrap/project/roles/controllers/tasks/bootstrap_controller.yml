@@ -21,7 +21,7 @@
     avi_credentials: "{{ avi_credentials | combine({ item.key: item.value }) }}"
   with_items:
   - { key: 'password', value: "{{ hostvars['jumpbox.student.lab']['Lab_avi_admin_password'] }}" }
-  - { key: 'avi_version', value: "{{ result['json']['version']['Version'] }}" }
+  - { key: 'api_version', value: "{{ result['json']['version']['Version'] }}" }
   - { key: 'controller', value: "{{ avi_creds['controller'] }}" }
   - { key: 'username', value: "{{ avi_creds['username'] }}" }
 
