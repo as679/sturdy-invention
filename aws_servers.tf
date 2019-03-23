@@ -29,7 +29,8 @@ resource "aws_instance" "server" {
     Owner = "${var.owner}"
     Lab_Group = "servers"
     Lab_Name = "server${count.index + 1}.lab"
-  }
+    Lab_Timezone = "${var.lab_timezone}"  
+ }
 
   root_block_device {
     volume_type           = "standard"
