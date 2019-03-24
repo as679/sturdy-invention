@@ -32,6 +32,7 @@ resource "aws_instance" "ctrl" {
     Lab_Group = "controllers"
     Lab_Name = "controller.student${count.index + 1}.lab"
     ansible_connection = "local"
+    Lab_Timezone = "${var.lab_timezone}"
   }
 
   root_block_device {

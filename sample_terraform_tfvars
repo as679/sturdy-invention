@@ -8,7 +8,8 @@ avi_backup_admin_password = "..."
 student_count = 2
 server_count = 4
 key = "training-key..."
-id = "aviGSLB..."
+id = "aviGSLB...Training"
+lab_timezone = "EST"
 vpc_cidr = "172.21.0.0/16"
 pkey = <<EOF
 -----BEGIN RSA PRIVATE KEY-----

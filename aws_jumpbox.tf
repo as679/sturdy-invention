@@ -41,6 +41,8 @@ resource "aws_instance" "jump" {
     Lab_avi_backup_admin_password = "${var.avi_backup_admin_password}"
     Lab_avi_management_network = "${var.id}_management_network"
     Lab_avi_vip_network = "${var.id}_VIP_network"
+    Lab_Noshut = "jumpbox"
+    Lab_Timezone = "${var.lab_timezone}"
   }
 
   root_block_device {

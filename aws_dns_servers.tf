@@ -30,6 +30,7 @@ resource "aws_instance" "dns_server" {
     Owner = "${var.owner}"
     Lab_Group = "dns_servers"
     Lab_Name = "dns_server${count.index + 1}.lab"
+    Lab_Timezone = "${var.lab_timezone}"
   }
 
   root_block_device {

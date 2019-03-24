@@ -10,54 +10,6 @@ write_files:
       touch /tmp/cloud-init.done
     path: /opt/bootstrap.sh
     permissions: 0755
-  - content: |
-      - hosts: localhost
-        connection: local
-        vars:
-          api_version: 17.2.7
-        roles:
-          - role: avinetworks.avisdk
-        tasks:
-          - name: Avi Cloud
-            include_role:
-              name: avinetworks.aviconfig
-            vars:
-              avi_controller: "{{ ctrl_hostname }}"
-              avi_username: admin
-              avi_password: SETME
-              avi_config:
-                cloud:
-                  - api_version: 17.2.7
-                    name: aws
-                    vtype: CLOUD_AWS
-                    dhcp_enabled: true
-                    license_type: "LIC_CORES"
-                    aws_configuration:
-                      region: ${region}
-                      vpc_id: ${vpc_id}
-                      use_iam_roles: True
-                      zones:
-                        - availability_zone: ${az}
-                          mgmt_network_name: ${mgmt_net}
-            with_items: "{{ groups['controllers'] }}"
-            loop_control:
-              loop_var: ctrl_hostname
-    path: /root/clouds.yml
-    permissions: 0600
-  - content: |
-      #!/usr/bin/python
-      import yaml
-      import sys
-      with open("%s.template" % sys.argv[1]) as fh:
-              y = yaml.load(fh)
-      items = []
-      y[0]['tasks'][0]['with_items'] = items
-      for i in range(1, int(sys.argv[2]) + 1):
-              items.append("ctrl%s" % i)
-      with open("%s.yml" % sys.argv[1], 'w') as fh:
-              yaml.dump(y, fh)
-    path: /root/update_yml_template
-    permissions: 0700
 
 runcmd:
   - /opt/bootstrap.sh

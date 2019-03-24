@@ -23,6 +23,11 @@ variable "server_count" {
   default     = 4
 }
 
+variable "lab_timezone" {
+  description = "Lab Timezone: PST, EST, GMT or SGT"
+  default = "EST"
+}
+
 variable "dns_server_count" {
   description = "The class size. Students get a shared servers"
   default     = 2
@@ -43,6 +48,7 @@ variable "aws_az" {
   description = "Control of placement of objects within the AWS Availability Zone"
 
   default = {
+    us-east-1 = "us-east-1a"
     us-west-2 = "us-west-2a"
     eu-west-1 = "eu-west-1a"
   }
