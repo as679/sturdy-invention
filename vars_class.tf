@@ -18,14 +18,13 @@ variable "student_count" {
   default     = 2
 }
 
+variable "lab_timezone" {
+  description = "Lab Timezone: PST, EST, GMT or SGT"
+}
+
 variable "server_count" {
   description = "The class size. Students get a shared servers"
   default     = 4
-}
-
-variable "lab_timezone" {
-  description = "Lab Timezone: PST, EST, GMT or SGT"
-  default = "EST"
 }
 
 variable "dns_server_count" {
