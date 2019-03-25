@@ -19,7 +19,7 @@ resource "aws_instance" "server" {
   key_name               = "${var.key}"
   vpc_security_group_ids = ["${aws_security_group.jumpsg.id}"]
   subnet_id              = "${aws_subnet.privnet.id}"
-  private_ip             = "${format("%s%02d", cidrhost(aws_subnet.privnet.cidr_block,1) , count.index + 1)}"
+  private_ip             = "${format("%s%d", cidrhost(aws_subnet.privnet.cidr_block,2) , count.index +1 )}"
   source_dest_check      = false
   user_data              = "${data.template_file.server_userdata.*.rendered[count.index]}"
   depends_on             = ["aws_instance.jump"]
@@ -29,6 +29,7 @@ resource "aws_instance" "server" {
     Owner = "${var.owner}"
     Lab_Group = "servers"
     Lab_Name = "server${count.index + 1}.lab"
+    Lab_Timezone = "${var.lab_timezone}"
   }
 
   root_block_device {
